@@ -1,4 +1,4 @@
-use actix_web::{get, delete, post, put, App, HttpResponse, HttpServer, Responder, Result, web};
+use actix_web::{get, post, App, HttpResponse, HttpServer, Responder, web};
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 
@@ -13,7 +13,7 @@ async fn check_health() -> impl Responder {
     HttpResponse::Ok().finish()
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize)]
 struct Test {
     message: String,
 }
@@ -26,34 +26,19 @@ struct GetTest {
 
 #[post("/test")]
 async fn test_post(json: web::Json<Test>) -> impl Responder {
-    println!("{:#?}", json);
-    HttpResponse::Ok().finish()
-}
-
-#[put("/test/{test_id}")]
-async fn test_put(path: web::Path<String>, json: web::Json<Test>) -> impl Responder {
-    let test_id = path.into_inner();
-    println!("{}", test_id);
-    println!("{:#?}", json);
-    HttpResponse::Ok().finish()
-}
-
-#[delete("/test/{test_id}")]
-async fn test_delete(path: web::Path<String>) -> impl Responder {
-    let test_id = path.into_inner();
-    println!("{}", test_id);
+    println!("{}", json.message);
     HttpResponse::Ok().finish()
 }
 
 #[get("/test/{test_id}")]
-async fn test_get(path: web::Path<String>) -> Result<impl Responder> {
+async fn get_test(path: web::Path<String>) -> impl Responder {
     let test_id = path.into_inner();
     let result = GetTest {
-        id: test_id,
+        id: String::from(test_id),
         message: String::from("testMessage"),
     };
 
-    Ok(web::Json(result))
+    Ok(web::Json::<GetTest>::(result))
 }
 
 #[actix_web::main]
@@ -70,9 +55,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(|| App::new()
         .service(check_health)
         .service(test_post)
-        .service(test_get)
-        .service(test_delete)
-        .service(test_put))
+        .service(get_test))
         .bind((config.ip, config.port))?
         .run()
         .await
