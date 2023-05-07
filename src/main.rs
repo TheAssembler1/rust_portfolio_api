@@ -1,9 +1,14 @@
 use actix_web::{HttpServer, App};
 use dotenv::dotenv;
-
-use crate::controllers::server_check::ConnConfig;
+use serde::Deserialize;
 
 mod controllers;
+
+#[derive(Deserialize)]
+pub struct ConnConfig {
+    pub port: u16,
+    pub ip: String,
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
