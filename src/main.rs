@@ -1,60 +1,9 @@
-use actix_web::{get, delete, post, put, App, HttpResponse, HttpServer, Responder, Result, web};
+use actix_web::{HttpServer, App};
 use dotenv::dotenv;
-use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize)]
-struct ConnConfig {
-    port: u16,
-    ip: String,
-}
+use crate::controllers::server_check::ConnConfig;
 
-#[get("/")]
-async fn check_health() -> impl Responder {
-    HttpResponse::Ok().finish()
-}
-
-#[derive(Deserialize, Debug)]
-struct Test {
-    message: String,
-}
-
-#[derive(Serialize)]
-struct GetTest {
-    id: String,
-    message: String,
-}
-
-#[post("/test")]
-async fn test_post(json: web::Json<Test>) -> impl Responder {
-    println!("{:#?}", json);
-    HttpResponse::Ok().finish()
-}
-
-#[put("/test/{test_id}")]
-async fn test_put(path: web::Path<String>, json: web::Json<Test>) -> impl Responder {
-    let test_id = path.into_inner();
-    println!("{}", test_id);
-    println!("{:#?}", json);
-    HttpResponse::Ok().finish()
-}
-
-#[delete("/test/{test_id}")]
-async fn test_delete(path: web::Path<String>) -> impl Responder {
-    let test_id = path.into_inner();
-    println!("{}", test_id);
-    HttpResponse::Ok().finish()
-}
-
-#[get("/test/{test_id}")]
-async fn test_get(path: web::Path<String>) -> Result<impl Responder> {
-    let test_id = path.into_inner();
-    let result = GetTest {
-        id: test_id,
-        message: String::from("testMessage"),
-    };
-
-    Ok(web::Json(result))
-}
+mod controllers;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -68,11 +17,11 @@ async fn main() -> std::io::Result<()> {
     println!("Server listening at http://{}:{}", config.ip, config.port);
     
     HttpServer::new(|| App::new()
-        .service(check_health)
-        .service(test_post)
-        .service(test_get)
-        .service(test_delete)
-        .service(test_put))
+        .service(controllers::server_check::check_health)
+        .service(controllers::test::test_post)
+        .service(controllers::test::test_get)
+        .service(controllers::test::test_delete)
+        .service(controllers::test::test_put))
         .bind((config.ip, config.port))?
         .run()
         .await
