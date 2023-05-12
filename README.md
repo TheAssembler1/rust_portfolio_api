@@ -2,7 +2,7 @@
 
 #### Setting up dev mysql user
 1. Get root access to mysql
-`sudo mysql`
+```sudo mysql```
 2. Create user
 `CREATE USER 'dev'@'localhost' IDENTIFIED BY 'password';`
 3. Grant user privileges
