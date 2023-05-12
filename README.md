@@ -10,6 +10,6 @@
 - Create user <br />
 `CREATE USER 'dev'@'localhost' IDENTIFIED BY 'password';`
 - Grant user privileges <br />
-`GRANT ALL PRIVILEGES ON *.* TO 'dev'@'localhost';`
+`GRANT ALL PRIVILEGES ON rust_portfolio.* TO 'dev'@'localhost';`
 - Login as user <br />
 `mysql -u dev -p`
