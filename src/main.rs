@@ -4,7 +4,7 @@ use mysql::prelude::*;
 use mysql::*;
 use serde::Deserialize;
 
-mod controllers;
+mod controller;
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
@@ -66,11 +66,11 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(|| {
         App::new()
-            .service(controllers::server_check::check_health)
-            .service(controllers::test::test_post)
-            .service(controllers::test::test_get)
-            .service(controllers::test::test_delete)
-            .service(controllers::test::test_put)
+            .service(controller::server_check::check_health)
+            .service(controller::test::test_post)
+            .service(controller::test::test_get)
+            .service(controller::test::test_delete)
+            .service(controller::test::test_put)
     })
     .bind((server_config.ip, server_config.port))?
     .run()

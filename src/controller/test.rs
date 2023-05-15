@@ -1,5 +1,7 @@
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, Result};
 use serde::{Deserialize, Serialize};
-use actix_web::{get, delete, post, put, HttpResponse, Responder, Result, web};
+
+mod crud;
 
 #[derive(Deserialize, Debug)]
 #[allow(dead_code)]
