@@ -6,31 +6,68 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug)]
 #[allow(dead_code)]
+pub struct DbTest {
+    pub id: Option<u64>,
+    pub message: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[allow(dead_code)]
 pub struct Test {
-    pub id: Option<u32>,
     pub message: String,
 }
 
 impl Test {
-    pub fn post(&self) -> String {
+    pub fn post(test: Self) -> u64 {
         let mut conn = connection_pool::ConnectionPool::get_conn();
+
         conn.exec_drop(
             r"INSERT INTO test (message) VALUES (?)",
-            (self.message.clone(),),
+            (test.message.clone(),),
         )
         .unwrap();
 
-        String::from("testMessage")
+        conn.last_insert_id()
     }
 
-    pub fn get(id: String) -> Test {
-        // FIXME: proper error checking!
-        let id: u32 = id.parse().unwrap();
+    pub fn put(id: String, test: Self) {
+        let mut conn = connection_pool::ConnectionPool::get_conn();
+        let id: u64 = id.parse().unwrap();
 
+        conn.exec_drop(
+            r"UPDATE test SET message=? WHERE id=?",
+            (test.message.clone(), id),
+        )
+        .unwrap();
+    }
+}
+
+impl DbTest {
+    pub fn get_all() -> Vec<DbTest> {
+        let mut conn = connection_pool::ConnectionPool::get_conn();
+        let mut results: Vec<DbTest> = Vec::new();
+
+        let selected_tests = conn
+            .query::<(u64, String), _>(r"SELECT * FROM test")
+            .unwrap();
+
+        for test in selected_tests {
+            let (id, message) = test;
+            results.push(DbTest {
+                id: Some(id),
+                message,
+            });
+        }
+
+        results
+    }
+
+    pub fn get(id: String) -> DbTest {
+        let id: u64 = id.parse().unwrap();
         let mut conn = connection_pool::ConnectionPool::get_conn();
         let stmt = conn.prep("SELECT * FROM test WHERE id=:id").unwrap();
         let result = conn
-            .exec::<(u32, String), _, _>(
+            .exec::<(u64, String), _, _>(
                 stmt,
                 params! {
                     "id" => id
@@ -38,39 +75,49 @@ impl Test {
             )
             .unwrap();
         let result = result.get(0).unwrap();
-
         let (id, result) = result;
 
-        Test {
+        DbTest {
             id: Some(*id),
             message: result.to_owned(),
         }
     }
+
+    pub fn delete(id: String) {
+        let id: u64 = id.parse().unwrap();
+        let mut conn = connection_pool::ConnectionPool::get_conn();
+
+        conn.exec_drop(r"DELETE FROM test WHERE id=?", (id,))
+            .unwrap();
+    }
 }
 
 #[post("/test")]
-pub async fn test_post(json: web::Json<Test>) -> impl Responder {
-    let id = json.into_inner().post();
-    HttpResponse::Ok().finish()
+pub async fn test_post(json: web::Json<Test>) -> Result<impl Responder> {
+    let id = Test::post(json.into_inner());
+    Ok(web::Json(id))
+}
+
+#[get("/test")]
+pub async fn test_get_all() -> Result<impl Responder> {
+    let results = DbTest::get_all();
+    Ok(web::Json(results))
 }
 
 #[put("/test/{test_id}")]
 pub async fn test_put(path: web::Path<String>, json: web::Json<Test>) -> impl Responder {
-    let test_id = path.into_inner();
-    println!("{}", test_id);
-    println!("{:#?}", json);
+    Test::put(path.into_inner(), json.into_inner());
     HttpResponse::Ok().finish()
 }
 
 #[delete("/test/{test_id}")]
 pub async fn test_delete(path: web::Path<String>) -> impl Responder {
-    let test_id = path.into_inner();
-    println!("{}", test_id);
+    DbTest::delete(path.into_inner());
     HttpResponse::Ok().finish()
 }
 
 #[get("/test/{test_id}")]
 pub async fn test_get(path: web::Path<String>) -> Result<impl Responder> {
-    let result = Test::get(path.into_inner());
+    let result = DbTest::get(path.into_inner());
     Ok(web::Json(result))
 }

@@ -1,13 +1,10 @@
 use actix_web::{App, HttpServer};
 use dotenv::dotenv;
-use mysql::prelude::*;
 use mysql::*;
 use serde::Deserialize;
-use std::{env, io};
-use once_cell::unsync::OnceCell;
 
-mod controller;
 mod connection_pool;
+mod controller;
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
@@ -54,15 +51,16 @@ async fn main() -> std::io::Result<()> {
     println!("Database connection string: {}", db_url);
 
     let pool = connection_pool::ConnectionPool::init(db_url);
-    connection_pool::CONNECTION_POOL.set(connection_pool::ConnectionPool {
-        pool
-    }).unwrap();
+    connection_pool::CONNECTION_POOL
+        .set(connection_pool::ConnectionPool { pool })
+        .unwrap();
 
     HttpServer::new(|| {
         App::new()
             .service(controller::server_check::check_health)
             .service(controller::test::test_post)
             .service(controller::test::test_get)
+            .service(controller::test::test_get_all)
             .service(controller::test::test_delete)
             .service(controller::test::test_put)
     })
