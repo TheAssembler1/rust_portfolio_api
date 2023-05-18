@@ -1,7 +1,8 @@
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder, Result};
-use mysql::prelude::Queryable;
-use serde::{Deserialize, Serialize};
 use crate::connection_pool;
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder, Result};
+use mysql::prelude::*;
+use mysql::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug)]
 #[allow(dead_code)]
@@ -13,9 +14,37 @@ pub struct Test {
 impl Test {
     pub fn post(&self) -> String {
         let mut conn = connection_pool::ConnectionPool::get_conn();
-        conn.exec_drop(r"INSERT INTO test (message) VALUES (?)", (self.message.clone(),)).unwrap();
+        conn.exec_drop(
+            r"INSERT INTO test (message) VALUES (?)",
+            (self.message.clone(),),
+        )
+        .unwrap();
 
         String::from("testMessage")
+    }
+
+    pub fn get(id: String) -> Test {
+        // FIXME: proper error checking!
+        let id: u32 = id.parse().unwrap();
+
+        let mut conn = connection_pool::ConnectionPool::get_conn();
+        let stmt = conn.prep("SELECT * FROM test WHERE id=:id").unwrap();
+        let result = conn
+            .exec::<(u32, String), _, _>(
+                stmt,
+                params! {
+                    "id" => id
+                },
+            )
+            .unwrap();
+        let result = result.get(0).unwrap();
+
+        let (id, result) = result;
+
+        Test {
+            id: Some(*id),
+            message: result.to_owned(),
+        }
     }
 }
 
@@ -42,11 +71,6 @@ pub async fn test_delete(path: web::Path<String>) -> impl Responder {
 
 #[get("/test/{test_id}")]
 pub async fn test_get(path: web::Path<String>) -> Result<impl Responder> {
-    let test_id = path.into_inner();
-    let result = Test {
-        id: Some(0),
-        message: String::from("testMessage"),
-    };
-
+    let result = Test::get(path.into_inner());
     Ok(web::Json(result))
 }
