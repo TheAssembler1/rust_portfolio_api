@@ -1660,6 +1660,7 @@ dependencies = [
  "dotenv",
  "envy",
  "mysql",
+ "once_cell",
  "serde",
  "serde_json",
 ]

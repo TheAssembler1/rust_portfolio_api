@@ -3,8 +3,11 @@ use dotenv::dotenv;
 use mysql::prelude::*;
 use mysql::*;
 use serde::Deserialize;
+use std::{env, io};
+use once_cell::unsync::OnceCell;
 
 mod controller;
+mod connection_pool;
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
@@ -16,7 +19,7 @@ struct ServerConfig {
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
-struct DbConfig {
+pub struct DbConfig {
     user: String,
     password: String,
     host: String,
@@ -50,19 +53,10 @@ async fn main() -> std::io::Result<()> {
     );
     println!("Database connection string: {}", db_url);
 
-    println!("Attempting connection to database...");
-
-    let pool = match Pool::new(&db_url[..]) {
-        Ok(pool) => {
-            println!("Connection to database successful!");
-            pool
-        }
-        Err(error) => panic!("{:#?}", error),
-    };
-
-    let mut conn = pool.get_conn().unwrap();
-
-    conn.query_drop(r"SELECT 1").unwrap();
+    let pool = connection_pool::ConnectionPool::init(db_url);
+    connection_pool::CONNECTION_POOL.set(connection_pool::ConnectionPool {
+        pool
+    }).unwrap();
 
     HttpServer::new(|| {
         App::new()
