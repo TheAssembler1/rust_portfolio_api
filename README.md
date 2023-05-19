@@ -13,3 +13,6 @@
 `GRANT ALL PRIVILEGES ON rust_portfolio.* TO 'dev'@'localhost';`
 - Login as user <br />
 `mysql -u dev -p`
+
+#### Useful docs
+- https://docs.rs/actix-form-data/latest/actix_form_data/
