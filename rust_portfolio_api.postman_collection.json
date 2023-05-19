@@ -1,9 +1,8 @@
 {
 	"info": {
-		"_postman_id": "19fa2e86-ba71-4a71-84b3-4ef242448748",
+		"_postman_id": "688cd0f4-5417-48e0-9b02-5b642ae7413d",
 		"name": "rust_portfolio_api",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "23224517"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
@@ -16,7 +15,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"message\": \"testMessage\"\n}",
+							"raw": "{\n    \"message\": \"another\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -47,7 +46,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"message\": \"testMessage\"\n}",
+							"raw": "{\n    \"message\": \"different\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -55,7 +54,7 @@
 							}
 						},
 						"url": {
-							"raw": "http://127.0.0.1:8080/test/testId",
+							"raw": "http://127.0.0.1:8080/test/1",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -66,7 +65,7 @@
 							"port": "8080",
 							"path": [
 								"test",
-								"testId"
+								"1"
 							]
 						}
 					},
@@ -96,12 +95,12 @@
 					"response": []
 				},
 				{
-					"name": "test_put",
+					"name": "test_get",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://127.0.0.1:8080/test/testId",
+							"raw": "http://127.0.0.1:8080/test/2",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -112,7 +111,165 @@
 							"port": "8080",
 							"path": [
 								"test",
-								"testId"
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "test_get_all",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8080/test",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"test"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "blog",
+			"item": [
+				{
+					"name": "blog_post",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"testTitle\",\n    \"html\": \"testHtml\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8080/blog",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"blog"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "blog_put",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"newTitle\",\n    \"html\": \"testHtml\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8080/blog/2",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"blog",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "blog_delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8080/blog/1",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"blog",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "blog_get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8080/blog/2",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"blog",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "blog_get_all",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8080/blog",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"blog"
 							]
 						}
 					},

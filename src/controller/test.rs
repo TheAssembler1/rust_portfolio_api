@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Deserialize, Serialize, Debug)]
 #[allow(dead_code)]
 pub struct DbTest {
-    pub id: Option<u64>,
+    pub id: u64,
     pub message: String,
 }
 
@@ -53,10 +53,7 @@ impl DbTest {
 
         for test in selected_tests {
             let (id, message) = test;
-            results.push(DbTest {
-                id: Some(id),
-                message,
-            });
+            results.push(DbTest { id, message });
         }
 
         results
@@ -78,7 +75,7 @@ impl DbTest {
         let (id, result) = result;
 
         DbTest {
-            id: Some(*id),
+            id: *id,
             message: result.to_owned(),
         }
     }

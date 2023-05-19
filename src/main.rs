@@ -63,6 +63,11 @@ async fn main() -> std::io::Result<()> {
             .service(controller::test::test_get_all)
             .service(controller::test::test_delete)
             .service(controller::test::test_put)
+            .service(controller::blog::blog_post)
+            .service(controller::blog::blog_get)
+            .service(controller::blog::blog_get_all)
+            .service(controller::blog::blog_delete)
+            .service(controller::blog::blog_put)
     })
     .bind((server_config.ip, server_config.port))?
     .run()
