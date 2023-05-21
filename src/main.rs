@@ -1,3 +1,4 @@
+use actix_cors::Cors;
 use actix_web::{App, HttpServer};
 use dotenv::dotenv;
 use mysql::*;
@@ -56,7 +57,10 @@ async fn main() -> std::io::Result<()> {
         .unwrap();
 
     HttpServer::new(|| {
+        let cors = Cors::default().allow_any_origin().send_wildcard();
+
         App::new()
+            .wrap(cors)
             .service(controller::server_check::check_health)
             .service(controller::test::test_post)
             .service(controller::test::test_get)
