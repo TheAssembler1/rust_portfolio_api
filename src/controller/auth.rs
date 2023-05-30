@@ -30,8 +30,6 @@ impl User {
         let id = Uuid::new_v4().to_string();
         let hash = hash_with_result(user.password, BCRYPT_ITERATIONS).unwrap();
 
-        println!("{:?}", hash.get_salt().as_bytes());
-
         conn.exec_drop(
             r"INSERT INTO user (id, email, password, salt) VALUES (?, ?, ?, ?)",
             (&id, user.email, hash.to_string(), hash.get_salt()),
@@ -55,8 +53,8 @@ impl User {
         let mut conn = connection_pool::ConnectionPool::get_conn();
 
         let pass_salt = conn
-            .exec_first::<(String, String), _, _>(
-                r"SELECT password, salt FROM user WHERE email=? LIMIT 1",
+            .exec_first::<String, _, _>(
+                r"SELECT password FROM user WHERE email=? LIMIT 1",
                 (&user.email,),
             )
             .unwrap();
@@ -65,26 +63,9 @@ impl User {
             return HttpResponse::NotFound();
         }
 
-        let (password, salt) = pass_salt.unwrap();
+        let password = pass_salt.unwrap();
 
-        let hashed_password = bcrypt::hash_with_salt(
-            password,
-            BCRYPT_ITERATIONS,
-            salt.into_bytes()[0..16].try_into().unwrap(),
-        )
-        .unwrap()
-        .to_string();
-
-        println!("{}", hashed_password);
-
-        let result = conn
-            .exec_first::<String, _, _>(
-                r"SELECT id FROM user WHERE email=? AND password=? LIMIT 1",
-                (&user.email, &hashed_password),
-            )
-            .unwrap();
-
-        if result == None {
+        if !bcrypt::verify(&user.password, &password).unwrap() {
             return HttpResponse::Unauthorized();
         }
 
