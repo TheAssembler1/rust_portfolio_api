@@ -1,5 +1,5 @@
-use actix_web::{get, Responder, HttpResponse};
-use serde::{Deserialize};
+use actix_web::{get, HttpResponse, Responder};
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct ConnConfig {
@@ -8,6 +8,6 @@ pub struct ConnConfig {
 }
 
 #[get("/")]
-pub async fn check_health() -> impl Responder {
+async fn check_health() -> impl Responder {
     HttpResponse::Ok().finish()
 }

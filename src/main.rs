@@ -1,6 +1,7 @@
 use actix_cors::Cors;
-use actix_web::{App, HttpServer};
+use actix_web::{middleware::Logger, App, HttpServer};
 use dotenv::dotenv;
+use env_logger::Env;
 use mysql::*;
 use serde::Deserialize;
 
@@ -27,6 +28,8 @@ pub struct DbConfig {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    env_logger::try_init_from_env(Env::default().default_filter_or("info"))
+        .expect("failed to init logger");
     dotenv().ok();
 
     let server_config = match envy::prefixed("SERVER_").from_env::<ServerConfig>() {
@@ -60,6 +63,7 @@ async fn main() -> std::io::Result<()> {
         let cors = Cors::default().allow_any_origin().send_wildcard();
 
         App::new()
+            .wrap(Logger::default())
             .wrap(cors)
             .service(controller::server_check::check_health)
             .service(controller::test::test_post)
@@ -72,6 +76,12 @@ async fn main() -> std::io::Result<()> {
             .service(controller::blog::blog_get_all)
             .service(controller::blog::blog_delete)
             .service(controller::blog::blog_put)
+            .service(controller::auth::user_post)
+            .service(controller::auth::user_get)
+            .service(controller::auth::user_get_all)
+            .service(controller::auth::user_delete)
+            .service(controller::auth::user_put)
+            .service(controller::auth::user_login)
     })
     .bind((server_config.ip, server_config.port))?
     .run()
