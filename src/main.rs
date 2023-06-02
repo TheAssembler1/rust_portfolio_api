@@ -2,8 +2,12 @@ use actix_cors::Cors;
 use actix_web::{middleware::Logger, App, HttpServer};
 use dotenv::dotenv;
 use env_logger::Env;
+use jwt_simple::prelude::*;
 use mysql::*;
 use serde::Deserialize;
+use std::fs::File;
+use std::io::{Read, Write};
+use std::path::Path;
 
 mod connection_pool;
 mod controller;
@@ -46,6 +50,32 @@ async fn main() -> std::io::Result<()> {
     );
 
     // NOTE: logging init state
+    println!("checking for jwt private key");
+
+    // FIXME: put jwt file key init path in env var
+    let jwt_private_key_file_path = Path::new(".jwt.private.key");
+    let key: HS256Key;
+    if jwt_private_key_file_path.exists() {
+        println!("jwt private key found!");
+        let mut file = File::open(jwt_private_key_file_path.to_str().unwrap())?;
+        let mut buffer = Vec::new();
+        let file_size = file.read_to_end(&mut buffer).unwrap();
+
+        if file_size <= 0 {
+            panic!("jwt private key file size was {}!", file_size);
+        }
+
+        key = HS256Key::from_bytes(&buffer);
+    } else {
+        println!("jwt private key not found!");
+        println!("creating new jwt private key and writing to .private.key!");
+
+        key = HS256Key::generate();
+
+        let mut file = File::create(jwt_private_key_file_path.to_str().unwrap()).unwrap();
+        file.write_all(&key.to_bytes()[..]).unwrap();
+    }
+
     println!("{:#?}", server_config);
     println!("{:#?}", db_config);
     println!(
