@@ -1,6 +1,5 @@
-use std::println;
-
 use crate::connection_pool;
+use crate::jwt;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, Result};
 use bcrypt::hash_with_result;
 use mysql::params;
@@ -49,7 +48,7 @@ impl User {
         .unwrap();
     }
 
-    fn login(user: Self) -> impl Responder {
+    fn login(user: Self) -> HttpResponse {
         let mut conn = connection_pool::ConnectionPool::get_conn();
 
         let pass_salt = conn
@@ -60,16 +59,24 @@ impl User {
             .unwrap();
 
         if pass_salt == None {
-            return HttpResponse::NotFound();
+            return HttpResponse::NotFound().finish();
         }
 
         let password = pass_salt.unwrap();
 
         if !bcrypt::verify(&user.password, &password).unwrap() {
-            return HttpResponse::Unauthorized();
+            return HttpResponse::Unauthorized().finish();
         }
 
-        HttpResponse::Ok()
+        HttpResponse::Ok().json(web::Json(jwt::jwt_create_token()))
+    }
+
+    fn validate_token(token: jwt::JwtToken) -> HttpResponse {
+        if token.jwt_validate_token() {
+            return HttpResponse::Unauthorized().finish();
+        }
+
+        HttpResponse::Ok().finish()
     }
 }
 
@@ -158,4 +165,9 @@ async fn user_get(path: web::Path<String>) -> Result<impl Responder> {
 #[get("/auth/user-login")]
 async fn user_login(json: web::Json<User>) -> impl Responder {
     User::login(json.into_inner())
+}
+
+#[get("/auth/validate-token")]
+async fn user_validate_token(token: web::Query<jwt::JwtToken>) -> impl Responder {
+    User::validate_token(token.into_inner())
 }

@@ -1,6 +1,6 @@
-use mysql::*;
-use once_cell::sync::OnceCell;
-pub static CONNECTION_POOL: OnceCell<ConnectionPool> = OnceCell::new();
+use mysql::{Pool, PooledConn};
+use std::sync::OnceLock;
+pub static CONNECTION_POOL: OnceLock<ConnectionPool> = OnceLock::new();
 
 #[derive(Debug)]
 pub struct ConnectionPool {
@@ -8,8 +8,10 @@ pub struct ConnectionPool {
 }
 
 impl ConnectionPool {
-    pub fn global() -> &'static ConnectionPool{
-        CONNECTION_POOL.get().expect("CONNECTION_POOL is not initialized!")
+    pub fn global() -> &'static ConnectionPool {
+        CONNECTION_POOL
+            .get()
+            .expect("CONNECTION_POOL is not initialized!")
     }
 
     pub fn init(db_url: String) -> Pool {

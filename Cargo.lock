@@ -2143,7 +2143,6 @@ dependencies = [
  "envy",
  "jwt-simple",
  "mysql",
- "once_cell",
  "serde",
  "serde_json",
  "uuid",
