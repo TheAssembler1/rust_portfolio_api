@@ -8,6 +8,7 @@ use serde::Deserialize;
 mod connection_pool;
 mod controller;
 mod jwt;
+mod middleware;
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]

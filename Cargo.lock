@@ -2137,7 +2137,9 @@ version = "0.1.0"
 dependencies = [
  "actix-cors",
  "actix-web",
+ "anyhow",
  "bcrypt",
+ "derive_more",
  "dotenv",
  "env_logger",
  "envy",
