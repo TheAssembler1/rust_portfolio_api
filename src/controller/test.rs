@@ -1,7 +1,7 @@
+use super::generic_handler::{generic_handler_handle, GetTable, HttpHandler};
 use crate::connection_pool;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder, Result};
 use anyhow;
-use mysql::params;
 use mysql::prelude::Queryable;
 use serde::{Deserialize, Serialize};
 
@@ -37,52 +37,23 @@ impl Test {
     }
 }
 
+impl GetTable for DbTest {
+    fn get_table_name() -> String {
+        String::from("test")
+    }
+}
+
+impl From<(u64, String)> for DbTest {
+    fn from((id, message): (u64, String)) -> Self {
+        Self { id, message }
+    }
+}
+
+impl HttpHandler for DbTest {
+    type DbType = (u64, String);
+}
+
 impl DbTest {
-    fn get_all() -> Result<Vec<Self>, anyhow::Error> {
-        let mut conn = connection_pool::ConnectionPool::get_conn();
-        let mut results: Vec<Self> = Vec::new();
-
-        let selected_tests = conn.query::<(u64, String), _>(r"SELECT * FROM test")?;
-
-        for test in selected_tests {
-            let (id, message) = test;
-            results.push(Self { id, message });
-        }
-
-        Ok(results)
-    }
-
-    fn get(id: String) -> Result<HttpResponse, anyhow::Error> {
-        let id: Result<u64, _> = id.parse();
-
-        if id.is_err() {
-            return Ok(HttpResponse::BadRequest().finish());
-        }
-
-        let id = id.unwrap();
-
-        let mut conn = connection_pool::ConnectionPool::get_conn();
-        let stmt = conn.prep("SELECT * FROM test WHERE id=:id")?;
-        let result = conn.exec::<(u64, String), _, _>(
-            stmt,
-            params! {
-                "id" => id
-            },
-        )?;
-        let result = result.get(0);
-
-        if result.is_none() {
-            return Ok(HttpResponse::NotFound().finish());
-        }
-
-        let (id, message) = result.unwrap();
-
-        Ok(HttpResponse::Ok().json(DbTest {
-            id: *id,
-            message: message.to_owned(),
-        }))
-    }
-
     fn delete(id: String) -> Result<(), anyhow::Error> {
         let id: u64 = id.parse()?;
         let mut conn = connection_pool::ConnectionPool::get_conn();
@@ -106,13 +77,7 @@ async fn test_post(json: web::Json<Test>) -> impl Responder {
 
 #[get("/test")]
 async fn test_get_all() -> impl Responder {
-    let results = DbTest::get_all();
-
-    if results.is_ok() {
-        return HttpResponse::Ok().json(results.unwrap());
-    }
-
-    HttpResponse::InternalServerError().finish()
+    generic_handler_handle(DbTest::get_all())
 }
 
 #[put("/test/{test_id}")]
@@ -129,11 +94,5 @@ async fn test_delete(path: web::Path<String>) -> impl Responder {
 
 #[get("/test/{test_id}")]
 async fn test_get(path: web::Path<String>) -> impl Responder {
-    let result = DbTest::get(path.into_inner());
-
-    if result.is_ok() {
-        return result.unwrap();
-    }
-
-    HttpResponse::InternalServerError().finish()
+    generic_handler_handle(DbTest::get(path.into_inner()))
 }
