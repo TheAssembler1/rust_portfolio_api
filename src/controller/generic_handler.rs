@@ -5,6 +5,7 @@ use mysql::prelude::Queryable;
 use mysql::{params, prelude::FromRow, Params};
 use serde::Serialize;
 
+/// Returns result of ok otherwise returns Interal Server Error 500 and hides server side error
 pub fn generic_handler_handle(result: Result<HttpResponse, anyhow::Error>) -> HttpResponse {
     if result.is_ok() {
         return result.unwrap();
@@ -13,17 +14,36 @@ pub fn generic_handler_handle(result: Result<HttpResponse, anyhow::Error>) -> Ht
     HttpResponse::InternalServerError().finish()
 }
 
+/// Returns params for post/put queries
+///
+/// # Arguments
+///
+/// * `self` - used to construct params
+///
+/// Row must have an id column auto incremented not null
 pub trait GetParams {
     fn get_params(self: Self) -> Params;
 }
 
+/// A generic handler for get/get_all/put/post/delete endpoints
 pub trait HttpHandler {
+    /// Tuple data structure of db tuple type
     type DbTupleType: FromRow + Serialize + Clone;
+    /// Struct of db type
     type DbType: From<Self::DbTupleType> + Serialize;
+    /// Struct of user type usually identical to db type without the id
     type UserType: GetParams;
 
+    /// returns the table to be acted upon
     fn get_table_name() -> String;
+    /// returns tuple struct of two strings representing query
+    /// struct.0 represents what fields seperated by commas
+    /// struct.1 represents ? seperated by commas
+    /// ex. (String::from("field")), (String::from("?"))
     fn get_post_params_strings() -> (String, String);
+    /// returns string representing query
+    /// format is field equal question mark seperated by commas
+    /// ex. String::from("field=?")
     fn get_put_params_string() -> String;
 
     fn get(id: String) -> Result<HttpResponse, anyhow::Error> {
@@ -34,7 +54,6 @@ pub trait HttpHandler {
         }
 
         let id = id.unwrap();
-
         let mut conn = connection_pool::ConnectionPool::get_conn();
         let stmt = conn.prep(format!(
             "SELECT * FROM {} WHERE id=:id",
@@ -72,14 +91,23 @@ pub trait HttpHandler {
     }
 
     fn delete(id: String) -> Result<HttpResponse, anyhow::Error> {
-        let id: u64 = id.parse()?;
+        let id: Result<u64, _> = id.parse();
+
+        if id.is_err() {
+            return Ok(HttpResponse::BadRequest().finish());
+        }
+
+        let id = id.unwrap();
         let mut conn = connection_pool::ConnectionPool::get_conn();
 
-        // FIXME: return 404 of not found
         conn.exec_drop(
             format!("DELETE FROM {} WHERE id=?", Self::get_table_name()),
             (id,),
         )?;
+
+        if conn.affected_rows() <= 0 {
+            return Ok(HttpResponse::NotFound().finish());
+        }
 
         Ok(HttpResponse::Ok().finish())
     }
@@ -98,7 +126,7 @@ pub trait HttpHandler {
             Self::UserType::get_params(user_type),
         )?;
 
-        Ok(HttpResponse::Ok().json(conn.last_insert_id()))
+        Ok(HttpResponse::Created().json(conn.last_insert_id()))
     }
 
     fn put(id: String, user_type: Self::UserType) -> Result<HttpResponse, anyhow::Error> {
@@ -109,7 +137,6 @@ pub trait HttpHandler {
         }
 
         let id = id.unwrap();
-
         let mut conn = connection_pool::ConnectionPool::get_conn();
 
         conn.exec_drop(
@@ -121,6 +148,10 @@ pub trait HttpHandler {
             ),
             Self::UserType::get_params(user_type),
         )?;
+
+        if conn.affected_rows() <= 0 {
+            return Ok(HttpResponse::NotFound().finish());
+        }
 
         Ok(HttpResponse::Ok().json(id))
     }

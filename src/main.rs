@@ -1,3 +1,5 @@
+#![crate_name = "rust_portfolio_api"]
+
 use actix_cors::Cors;
 use actix_web::{middleware::Logger, App, HttpServer};
 use dotenv::dotenv;
