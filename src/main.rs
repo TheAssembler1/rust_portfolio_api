@@ -1,4 +1,4 @@
-use rust_portfolio_api::start_server;
+use portfolio_api::start_server;
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
