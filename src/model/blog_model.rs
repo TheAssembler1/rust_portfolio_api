@@ -12,8 +12,8 @@ pub struct Blog {
 
 #[derive(Insertable, Serialize, Deserialize)]
 #[diesel(table_name = crate::schema::blogs)]
-pub struct CreateBlog<'a> {
-    pub title: &'a str,
-    pub body: &'a str,
+pub struct CreateBlog {
+    pub title: String,
+    pub body: String,
     pub visible: bool,
 }
