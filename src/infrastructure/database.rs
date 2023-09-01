@@ -1,10 +1,11 @@
 use crate::infrastructure::env_setup;
-use diesel::{Connection, MysqlConnection};
+use diesel_async::{AsyncConnection, AsyncMysqlConnection};
 
-pub fn establish_connection() -> MysqlConnection {
-    let database_config =
-        env_setup::get_database_config().unwrap_or_else(|_| panic!("failed to get DATABASE_CONFIG"));
+pub async fn establish_connection() -> AsyncMysqlConnection {
+    let database_config = env_setup::get_database_config()
+        .unwrap_or_else(|_| panic!("failed to get DATABASE_CONFIG"));
 
-    MysqlConnection::establish(&database_config.url)
+    AsyncMysqlConnection::establish(&database_config.url)
+        .await
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_config.url))
 }
