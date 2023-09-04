@@ -26,6 +26,10 @@ pub async fn start_server() -> anyhow::Result<()> {
         .wrap(Logger::default())
         .service(health_check_presentation::health_check)
         .service(blog_presentation::create_blog)
+        .service(blog_presentation::get_blogs)
+        .service(blog_presentation::get_blog)
+        .service(blog_presentation::delete_blog)
+        .service(blog_presentation::update_blog)
     })
     .bind((server_config_host.to_owned(), server_config_port.to_owned()))?
     .run()

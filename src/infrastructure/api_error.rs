@@ -22,7 +22,7 @@ impl error::ResponseError<> for ApiError {
                 })
             },
             ApiError::DbError { message } => {
-                HttpResponseBuilder::new(StatusCode::INTERNAL_SERVER_ERROR).json(ApiError::Unauthorized {
+                HttpResponseBuilder::new(StatusCode::INTERNAL_SERVER_ERROR).json(ApiError::DbError {
                     message: message.to_owned(),
                 })
             }
