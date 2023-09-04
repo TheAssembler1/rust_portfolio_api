@@ -12,6 +12,6 @@ serde = { version = "1.0.171", features = ["derive"] }
 dotenv = "0.15.0"
 envy = "0.4.2"
 diesel = { version = "2.1.1", features = ["chrono"] }
-diesel-async = { version = "0.3.2", features = ["mysql"] }
+diesel-async = { version = "0.3.2", features = ["mysql", "deadpool"] }
 derive_more = "0.99.17"
 chrono = { version = "0.4.28", features = ["serde"] }
