@@ -22,16 +22,25 @@ pub async fn start_server() -> anyhow::Result<()> {
     env_setup::init_env()?;
     env_logger::init_from_env(Env::default().default_filter_or("info"));
 
+    info!("server application starting");
+
     let server_config = env_setup::get_server_config()?;
     let database_config = env_setup::get_database_config()?;
+
+    info!("{:#?}", server_config);
+    info!("{:#?}", database_config);
 
     let server_config_host = &server_config.host;
     let server_config_port = &server_config.port;
     let database_connection_string = &database_config.url;
 
+    info!("starting db connection pool");
+    
     let config =
         AsyncDieselConnectionManager::<AsyncMysqlConnection>::new(database_connection_string);
     let pool = Pool::builder(config).build()?;
+
+    info!("starting http server");
 
     HttpServer::new(move || {
         App::new()

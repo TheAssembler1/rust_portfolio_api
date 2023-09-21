@@ -2116,6 +2116,7 @@ dependencies = [
  "futures-util",
  "jwt-simple",
  "log",
+ "openssl",
  "serde",
 ]
 
