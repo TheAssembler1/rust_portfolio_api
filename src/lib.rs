@@ -1,3 +1,6 @@
+use std::{thread, time};
+use std::time::Duration;
+
 use actix_web::web::Data;
 use actix_web::{middleware::Logger, App, HttpServer};
 
@@ -10,7 +13,7 @@ mod schema;
 use env_logger::Env;
 
 use infrastructure::env_setup;
-use log::info;
+use log::{info, error};
 use presentation::blog_presentation;
 use presentation::health_check_presentation;
 
@@ -36,11 +39,23 @@ pub async fn start_server() -> anyhow::Result<()> {
 
     info!("starting db connection pool");
     
-    let config =
-        AsyncDieselConnectionManager::<AsyncMysqlConnection>::new(database_connection_string);
-    let pool = Pool::builder(config).build()?;
+    let pool = loop {
+        info!("attempting connection");
+
+        let config =
+            AsyncDieselConnectionManager::<AsyncMysqlConnection>::new(database_connection_string);
+        match Pool::builder(config).build() {
+            Ok(pool) => break pool,
+            Err(err) => {
+                error!("{}", err);
+                info!("reattempting connection in 2 seconds");
+                thread::sleep(time::Duration::from_millis(200));
+            }
+        };
+    };
 
     info!("starting http server");
+    info!("server listening at {server_config_host}:{server_config_port}");
 
     HttpServer::new(move || {
         App::new()
@@ -56,8 +71,6 @@ pub async fn start_server() -> anyhow::Result<()> {
     .bind((server_config_host.to_owned(), server_config_port.to_owned()))?
     .run()
     .await?;
-
-    info!("server listening at {server_config_host}:{server_config_port}");
 
     Ok(())
 }

@@ -1,0 +1,23 @@
+# Stage 1: Build the Rust Application
+FROM rust:bookworm as build
+WORKDIR /usr/src/portfolio_api
+COPY . .
+RUN cargo build --release
+
+# Stage 2: Create the Final Image
+FROM ubuntu:22.04
+RUN apt-get update && apt-get install -y libmysqlclient-dev openssl curl libpq-dev gcc 
+
+# Install Rust using rustup
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Copy your built application and diesel_startup.sh script
+COPY --from=build /usr/src/portfolio_api/target/release/portfolio_api /usr/local/bin/portfolio_api
+COPY --from=build /usr/src/portfolio_api/diesel_startup.sh /usr/local/bin/diesel_startup.sh
+COPY --from=build /usr/src/portfolio_api/migrations /usr/src/portfolio_api/migrations
+
+# Install diesel_cli (assuming it's meant to be used with PostgreSQL)
+RUN cargo install diesel_cli --no-default-features --features "mysql"
+
+CMD ["sh", "-c", "diesel_startup.sh && portfolio_api"]
