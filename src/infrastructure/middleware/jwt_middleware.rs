@@ -1,19 +1,24 @@
-/*use std::future::{ready, Ready};
+use std::future::{ready, Ready};
 
+use crate::{
+    infrastructure::api_error::{self, ApiError},
+    model::jwt_model::{AuthenticatedClaims, JwtToken},
+};
 use actix_web::{
     body::EitherBody,
     dev::{self, Service, ServiceRequest, ServiceResponse, Transform},
-    Error, HttpResponse, HttpRequest,
+    Error, HttpMessage, ResponseError,
 };
 use futures_util::future::LocalBoxFuture;
 use log::error;
-use crate::model::jwt_model::JwtToken;
 
 #[derive(Clone)]
 pub struct Auth;
-pub struct AuthMiddleWare<S> {
+pub struct AuthMiddleware<S> {
     service: S,
 }
+
+const BEARER_AUTH_HEADER_LOCATION: usize = 7;
 
 impl<S, B> Transform<S, ServiceRequest> for Auth
 where
@@ -52,48 +57,47 @@ where
                 Ok(token_str) => token_str,
                 Err(err) => {
                     error!("{err}");
-                    let (request, _pl) = request.into_parts();
 
-                    let response = HttpResponse::BadRequest()
-                        .body("bearer jwt decoding failed")
-                        .map_into_right_body();
-        
+                    let (request, _pl) = request.into_parts();
+                    let response = ApiError::JwtInternalError {
+                        message: "jwt decoding failed".to_string(),
+                    }
+                    .error_response()
+                    .map_into_right_body();
+
                     return Box::pin(async { Ok(ServiceResponse::new(request, response)) });
                 }
             };
-
-            let token_value: String = token_string.chars().skip(7).collect();
-            let jwt_token = JwtToken { token: token_value };
+            let token_value: String = token_string.chars().skip(BEARER_AUTH_HEADER_LOCATION).collect();
+            let jwt_token = JwtToken {
+                access_token: token_value,
+            };
             let jwt_claims = match JwtToken::jwt_validate_token(jwt_token) {
                 Ok(jwt_token) => jwt_token,
                 Err(err) => {
                     let (request, _pl) = request.into_parts();
-                    let response = HttpResponse::Unauthorized()
-                        .body(format!("{err}"))
-                        .map_into_right_body();
+                    let response = ApiError::Unauthorized {
+                        message: err.to_string(),
+                    }
+                    .error_response()
+                    .map_into_right_body();
+
                     return Box::pin(async { Ok(ServiceResponse::new(request, response)) });
                 }
             };
 
-            request.extensions_mut()
-                .insert(AuthenticatedClaims {
-                    user_id: jwt_claims.custom.user_id,
-                    username: jwt_claims.custom.username,
-                });
+            request.extensions_mut().insert(AuthenticatedClaims {
+                user_id: jwt_claims.custom.user_id,
+            });
 
             let res = self.service.call(request);
 
-            return Box::pin(async move {
-                res.await.map(ServiceResponse::map_into_left_body)
-            });
+            return Box::pin(async move { res.await.map(ServiceResponse::map_into_left_body) });
         }
 
         let (request, _pl) = request.into_parts();
-
-        let response = HttpResponse::BadRequest()
-            .body("no bearer jwt found")
-            .map_into_right_body();
+        let response = ApiError::JwtNotFound.error_response().map_into_right_body();
 
         Box::pin(async { Ok(ServiceResponse::new(request, response)) })
     }
-}*/
+}

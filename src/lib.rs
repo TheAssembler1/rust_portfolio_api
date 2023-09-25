@@ -1,7 +1,7 @@
-use std::{thread, time};
 use std::time::Duration;
+use std::{thread, time};
 
-use actix_web::web::Data;
+use actix_web::web::{self, Data};
 use actix_web::{middleware::Logger, App, HttpServer};
 
 mod controller;
@@ -13,13 +13,15 @@ mod schema;
 use env_logger::Env;
 
 use infrastructure::env_setup;
-use log::{info, error};
+use log::{error, info};
 use presentation::blog_presentation;
 use presentation::health_check_presentation;
 
 use diesel_async::pooled_connection::deadpool::Pool;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use diesel_async::AsyncMysqlConnection;
+
+use crate::infrastructure::middleware::jwt_middleware;
 
 pub async fn start_server() -> anyhow::Result<()> {
     env_setup::init_env()?;
@@ -38,7 +40,7 @@ pub async fn start_server() -> anyhow::Result<()> {
     let database_connection_string = &database_config.url;
 
     info!("starting db connection pool");
-    
+
     let pool = loop {
         info!("attempting connection");
 
@@ -61,12 +63,19 @@ pub async fn start_server() -> anyhow::Result<()> {
         App::new()
             .app_data(Data::new(pool.clone()))
             .wrap(Logger::default())
-            .service(health_check_presentation::health_check)
-            .service(blog_presentation::create_blog)
-            .service(blog_presentation::get_blogs)
-            .service(blog_presentation::get_blog)
-            .service(blog_presentation::delete_blog)
-            .service(blog_presentation::update_blog)
+            .service(
+                web::scope("")
+                    .service(health_check_presentation::health_check)
+                    .service(blog_presentation::get_blogs),
+            )
+            .service(
+                web::scope("")
+                    .wrap(jwt_middleware::Auth)
+                    .service(blog_presentation::get_blog)
+                    .service(blog_presentation::delete_blog)
+                    .service(blog_presentation::update_blog)
+                    .service(blog_presentation::create_blog),
+            )
     })
     .bind((server_config_host.to_owned(), server_config_port.to_owned()))?
     .run()

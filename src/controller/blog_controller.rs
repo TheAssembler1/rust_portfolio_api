@@ -73,7 +73,7 @@ pub async fn get_blogs(
         }
     };
 
-    Ok(HttpResponse::Created().json(blogs_results))
+    Ok(HttpResponse::Ok().json(blogs_results))
 }
 
 pub async fn get_blog(pool: Arc<DbPool>, blog_id: i32) -> actix_web::Result<impl Responder> {

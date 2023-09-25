@@ -6,7 +6,7 @@ RUN cargo build --release
 
 # Stage 2: Create the Final Image
 FROM ubuntu:22.04
-RUN apt-get update && apt-get install -y libmysqlclient-dev openssl curl libpq-dev gcc 
+RUN apt-get update && apt-get install -y libmysqlclient-dev libmariadb3 openssl curl libpq-dev gcc 
 
 # Install Rust using rustup
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y

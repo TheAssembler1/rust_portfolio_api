@@ -12,6 +12,8 @@ pub enum ApiError {
     Unauthorized { message: String },
     DbError { message: String },
     DbPoolError,
+    JwtNotFound,
+    JwtInternalError { message: String },
 }
 
 impl error::ResponseError<> for ApiError {
@@ -30,6 +32,14 @@ impl error::ResponseError<> for ApiError {
             ApiError::DbPoolError => {
                 error!("failed to get connection from db pool");
                 HttpResponse::InternalServerError().finish()
+            },
+            ApiError::JwtNotFound => {
+                HttpResponse::NotFound().finish()
+            },
+            ApiError::JwtInternalError { message } => {
+                HttpResponseBuilder::new(StatusCode::INTERNAL_SERVER_ERROR).json(ApiError::DbError {
+                    message: message.to_owned(),
+                })
             }
         }
     }
